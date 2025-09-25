@@ -21,12 +21,12 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
-        ? ["https://vercel-27w6.vercel.app"]
+        ? ["https://vercel-emks.vercel.app"]
         : [
             "http://localhost:3001",
             "http://localhost:5173",
             "http://localhost:5174",
-            "https://vercel-27w6.vercel.app",
+            "https://vercel-emks.vercel.app",
           ],
     credentials: true,
   })
