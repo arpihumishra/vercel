@@ -23,7 +23,6 @@ app.use(
       process.env.NODE_ENV === "production"
         ? ["https://vercel-27w6.vercel.app"]
         : [
-            "http://localhost:3000",
             "http://localhost:3001",
             "http://localhost:5173",
             "http://localhost:5174",
