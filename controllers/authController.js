@@ -1,6 +1,7 @@
-const User = require('../models/User');
-const Tenant = require('../models/Tenant');
-const { generateToken } = require('../middleware/auth');
+const User = require("../models/User");
+const Tenant = require("../models/Tenant");
+const { generateToken } = require("../middleware/auth");
+const bcrypt = require("bcryptjs");
 
 // @desc    Login user
 // @route   POST /api/auth/login
@@ -10,31 +11,32 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     // Check if user exists
-    const user = await User.findOne({ email }).populate('tenantId');
-    
+    const user = await User.findOne({ email }).populate("tenantId");
+
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: "Invalid credentials",
       });
     }
 
     // Check password
     const isPasswordValid = await user.comparePassword(password);
-    
+
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: "Invalid credentials",
       });
     }
 
     // Generate token
+    console.log(user);
     const token = generateToken(user._id);
 
     res.json({
       success: true,
-      message: 'Login successful',
+      message: "Login successful",
       data: {
         token,
         user: {
@@ -42,19 +44,19 @@ const login = async (req, res) => {
           email: user.email,
           role: user.role,
           tenant: {
-            id: user.tenantId._id,
-            slug: user.tenantId.slug,
-            name: user.tenantId.name,
-            plan: user.tenantId.plan
-          }
-        }
-      }
+            id: user?.tenantId?._id,
+            slug: user?.tenantId?.slug,
+            name: user?.tenantId?.name,
+            plan: user?.tenantId?.plan,
+          },
+        },
+      },
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error("Login error:", error);
     res.status(500).json({
       success: false,
-      message: 'Server error during login'
+      message: "Server error during login",
     });
   }
 };
@@ -75,21 +77,54 @@ const getProfile = async (req, res) => {
             id: req.tenant._id,
             slug: req.tenant.slug,
             name: req.tenant.name,
-            plan: req.tenant.plan
-          }
-        }
-      }
+            plan: req.tenant.plan,
+          },
+        },
+      },
     });
   } catch (error) {
-    console.error('Profile error:', error);
+    console.error("Profile error:", error);
     res.status(500).json({
       success: false,
-      message: 'Server error while fetching profile'
+      message: "Server error while fetching profile",
+    });
+  }
+};
+
+const Register = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Check if user exists
+    const user = await User.findOne({ email }).populate("tenantId");
+
+    if (user) {
+      return res.status(401).json({
+        success: false,
+        message: "User already exists",
+      });
+    }
+    const newUser = new User({
+      email,
+      password,
+      tenantId: "68d428cdd1ecdaa91eb54ab8",
+    });
+    await newUser.save();
+    res.json({
+      success: true,
+      message: "Register successful",
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error during login",
     });
   }
 };
 
 module.exports = {
   login,
-  getProfile
+  getProfile,
+  Register,
 };
