@@ -110,9 +110,18 @@ const Register = async (req, res) => {
       tenantId: "68d428cdd1ecdaa91eb54ab8",
     });
     await newUser.save();
+    const token = generateToken(newUser._id);
     res.json({
       success: true,
       message: "Register successful",
+      data: {
+        token,
+        user: {
+          id: newUser._id,
+          email: newUser.email,
+          role: newUser.role,
+        },
+      },
     });
   } catch (error) {
     console.error("Login error:", error);
