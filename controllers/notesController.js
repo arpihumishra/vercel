@@ -1,5 +1,5 @@
-const Note = require('../models/Note');
-const Tenant = require('../models/Tenant');
+const Note = require("../models/Note");
+const Tenant = require("../models/Tenant");
 
 // @desc    Create a new note
 // @route   POST /api/notes
@@ -7,34 +7,23 @@ const Tenant = require('../models/Tenant');
 const createNote = async (req, res) => {
   try {
     const { title, content } = req.body;
-    const tenantId = req.tenant._id;
-    const userId = req.user._id;
-
-    // Check current note count for subscription limits
-    const currentNoteCount = await Note.countByTenant(tenantId);
-    const canCreateNote = await req.tenant.canCreateNote(currentNoteCount);
-
-    if (!canCreateNote) {
-      return res.status(403).json({
-        success: false,
-        message: `Note limit reached. Current plan allows maximum ${req.tenant.maxNotes} notes. Please upgrade to Pro for unlimited notes.`
-      });
-    }
+    const userId = req.user?._id;
+    const tenantId = userId;
 
     // Create the note
     const note = await Note.create({
       title,
       content,
       tenantId,
-      createdBy: userId
+      createdBy: userId,
     });
 
     // Populate the created note with user info
-    await note.populate('createdBy', 'email role');
+    await note.populate("createdBy", "email role");
 
     res.status(201).json({
       success: true,
-      message: 'Note created successfully',
+      message: "Note created successfully",
       data: {
         note: {
           id: note._id,
@@ -42,15 +31,15 @@ const createNote = async (req, res) => {
           content: note.content,
           createdBy: note.createdBy,
           createdAt: note.createdAt,
-          updatedAt: note.updatedAt
-        }
-      }
+          updatedAt: note.updatedAt,
+        },
+      },
     });
   } catch (error) {
-    console.error('Create note error:', error);
+    console.error("Create note error:", error);
     res.status(500).json({
       success: false,
-      message: 'Server error while creating note'
+      message: "Server error while creating note",
     });
   }
 };
@@ -60,7 +49,7 @@ const createNote = async (req, res) => {
 // @access  Private (Member & Admin)
 const getNotes = async (req, res) => {
   try {
-    const tenantId = req.tenant._id;
+    const tenantId = req.user?._id;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -69,7 +58,7 @@ const getNotes = async (req, res) => {
     const notes = await Note.findByTenant(tenantId, {
       limit,
       skip,
-      sort: { createdAt: -1 }
+      sort: { createdAt: -1 },
     });
 
     // Get total count for pagination info
@@ -79,28 +68,28 @@ const getNotes = async (req, res) => {
     res.json({
       success: true,
       data: {
-        notes: notes.map(note => ({
+        notes: notes.map((note) => ({
           id: note._id,
           title: note.title,
           content: note.content,
           createdBy: note.createdBy,
           createdAt: note.createdAt,
-          updatedAt: note.updatedAt
+          updatedAt: note.updatedAt,
         })),
         pagination: {
           currentPage: page,
           totalPages,
           totalNotes,
           hasNextPage: page < totalPages,
-          hasPrevPage: page > 1
-        }
-      }
+          hasPrevPage: page > 1,
+        },
+      },
     });
   } catch (error) {
-    console.error('Get notes error:', error);
+    console.error("Get notes error:", error);
     res.status(500).json({
       success: false,
-      message: 'Server error while fetching notes'
+      message: "Server error while fetching notes",
     });
   }
 };
@@ -111,14 +100,17 @@ const getNotes = async (req, res) => {
 const getNote = async (req, res) => {
   try {
     const { id } = req.params;
-    const tenantId = req.tenant._id;
+    const tenantId = req.user._id;
 
-    const note = await Note.findOne({ _id: id, tenantId }).populate('createdBy', 'email role');
+    const note = await Note.findOne({ _id: id, tenantId }).populate(
+      "createdBy",
+      "email role"
+    );
 
     if (!note) {
       return res.status(404).json({
         success: false,
-        message: 'Note not found'
+        message: "Note not found",
       });
     }
 
@@ -131,24 +123,24 @@ const getNote = async (req, res) => {
           content: note.content,
           createdBy: note.createdBy,
           createdAt: note.createdAt,
-          updatedAt: note.updatedAt
-        }
-      }
+          updatedAt: note.updatedAt,
+        },
+      },
     });
   } catch (error) {
-    console.error('Get note error:', error);
-    
+    console.error("Get note error:", error);
+
     // Handle invalid ObjectId
-    if (error.name === 'CastError') {
+    if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
-        message: 'Invalid note ID'
+        message: "Invalid note ID",
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Server error while fetching note'
+      message: "Server error while fetching note",
     });
   }
 };
@@ -160,14 +152,14 @@ const updateNote = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, content } = req.body;
-    const tenantId = req.tenant._id;
+    const tenantId = req.user._id;
 
     const note = await Note.findOne({ _id: id, tenantId });
 
     if (!note) {
       return res.status(404).json({
         success: false,
-        message: 'Note not found'
+        message: "Note not found",
       });
     }
 
@@ -176,11 +168,11 @@ const updateNote = async (req, res) => {
     if (content !== undefined) note.content = content;
 
     await note.save();
-    await note.populate('createdBy', 'email role');
+    await note.populate("createdBy", "email role");
 
     res.json({
       success: true,
-      message: 'Note updated successfully',
+      message: "Note updated successfully",
       data: {
         note: {
           id: note._id,
@@ -188,24 +180,24 @@ const updateNote = async (req, res) => {
           content: note.content,
           createdBy: note.createdBy,
           createdAt: note.createdAt,
-          updatedAt: note.updatedAt
-        }
-      }
+          updatedAt: note.updatedAt,
+        },
+      },
     });
   } catch (error) {
-    console.error('Update note error:', error);
-    
+    console.error("Update note error:", error);
+
     // Handle invalid ObjectId
-    if (error.name === 'CastError') {
+    if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
-        message: 'Invalid note ID'
+        message: "Invalid note ID",
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Server error while updating note'
+      message: "Server error while updating note",
     });
   }
 };
@@ -223,7 +215,7 @@ const deleteNote = async (req, res) => {
     if (!note) {
       return res.status(404).json({
         success: false,
-        message: 'Note not found'
+        message: "Note not found",
       });
     }
 
@@ -231,22 +223,22 @@ const deleteNote = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Note deleted successfully'
+      message: "Note deleted successfully",
     });
   } catch (error) {
-    console.error('Delete note error:', error);
-    
+    console.error("Delete note error:", error);
+
     // Handle invalid ObjectId
-    if (error.name === 'CastError') {
+    if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
-        message: 'Invalid note ID'
+        message: "Invalid note ID",
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Server error while deleting note'
+      message: "Server error while deleting note",
     });
   }
 };
@@ -256,5 +248,5 @@ module.exports = {
   getNotes,
   getNote,
   updateNote,
-  deleteNote
+  deleteNote,
 };
